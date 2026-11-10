@@ -16,6 +16,8 @@ services:
       - DJANGO_DATABASE_NAME=/app/db_data/db.sqlite3
       - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-}
       - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-}
+    networks:
+      - crewpass_default
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
@@ -36,6 +38,15 @@ services:
       - certbot_www:/var/www/certbot:ro
     depends_on:
       - web
+    networks:
+      - crewpass_default
+      - fleetops_fleetops
+
+networks:
+  crewpass_default:
+    driver: bridge
+  fleetops_fleetops:
+    external: true
 
 volumes:
   db_data:
