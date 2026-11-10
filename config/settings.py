@@ -22,6 +22,8 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
     if origin.strip()
 ]
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 ALLOW_NULL_ORIGIN_FOR_LOCAL_DEBUG = (
     DEBUG and os.environ.get('DJANGO_ALLOW_NULL_ORIGIN', 'true').lower() == 'true'
 )
