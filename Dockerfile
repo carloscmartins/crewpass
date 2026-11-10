@@ -28,7 +28,9 @@ COPY . .
 # Compilar assets
 RUN npm run build:css && npm run build:js
 
-# Coletar arquivos estáticos
+# Coletar arquivos estáticos (chave temporária apenas para build)
+ENV DJANGO_DEBUG=true
+ENV DJANGO_SECRET_KEY=build-only-not-for-production
 RUN python manage.py collectstatic --noinput
 
 # Porta
