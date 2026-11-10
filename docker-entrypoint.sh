@@ -9,4 +9,9 @@ if [ -n "$DJANGO_SUPERUSER_EMAIL" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
     python manage.py createsuperuser --noinput 2>/dev/null || true
 fi
 
+# Dados de demonstração (opcional)
+if [ "${SEED_DEMO:-false}" = "true" ]; then
+    python manage.py seed_demo
+fi
+
 exec "$@"
