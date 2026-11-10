@@ -50,5 +50,9 @@ docker compose up -d --build
 bold "Migrações"
 docker compose exec -T web python manage.py migrate --noinput
 
+# Conectar nginx do CrewPass à rede do fleetops para o Caddy proxiar o domínio
+docker network connect fleetops_fleetops crewpass-nginx 2>/dev/null || true
+
 bold "DEPLOY CONCLUÍDO"
 ok "http://${CP_DOMAIN}  (admin via .env)"
+warn "Se o domínio for servido pelo Caddy do fleetops, mantenha a rede conectada: docker network connect fleetops_fleetops crewpass-nginx"
