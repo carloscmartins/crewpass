@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Histórico · {{ event.name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
+  <a class="text-sm text-muted underline decoration-line underline-offset-4 hover:text-brand" href="{% url 'reports:dashboard' organization.slug event.pk %}">← Painel do evento</a>
+  <header class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">{{ event.name }}</p>
+      <h1 class="mt-2 text-3xl font-medium tracking-tight">Histórico de movimentações</h1>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-muted">Registros marcados como válidos não precisam de ação. Use a invalidação somente quando uma movimentação tiver sido registrada por engano; somente a última movimentação válida pode ser invalidada para preservar a sequência. O registro original será mantido.</p>
+    </div>
+    <a class="inline-flex min-h-11 items-center justify-center border border-line px-4 text-sm font-medium transition hover:border-brand hover:text-brand" href="{{ csv_url }}">Exportar CSV filtrado</a>
+  </header>
+
+  {% if filter_error %}<p class="mt-5 border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200" role="alert">{{ filter_error }}</p>{% endif %}
+  <form class="mt-6 grid gap-3 border border-line bg-panel p-4 sm:grid-cols-2 lg:grid-cols-4 xl:items-end" method="get">
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.q.id_for_label }}">{{ form.q.label }}</label>{{ form.q }}</div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.company.id_for_label }}">{{ form.company.label }}</label>{{ form.company }}</div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>{{ form.category }}</div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.role.id_for_label }}">{{ form.role.label }}</label>{{ form.role }}</div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.date_from.id_for_label }}">{{ form.date_from.label }}</label>{{ form.date_from }}</div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.date_to.id_for_label }}">{{ form.date_to.label }}</label>{{ form.date_to }}</div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.movement_type.id_for_label }}">{{ form.movement_type.label }}</label>{{ form.movement_type }}</div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.validity.id_for_label }}">{{ form.validity.label }}</label>{{ form.validity }}</div>
+    <button class="min-h-12 border border-line px-4 text-sm font-semibold uppercase tracking-wider transition hover:border-brand hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" type="submit">Filtrar</button>
+  </form>
+
+  <section class="mt-5 overflow-hidden border border-line bg-panel" aria-label="Histórico do evento">
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[76rem] text-left text-sm">
+        <thead class="border-b border-line bg-black/30 text-xs uppercase tracking-wider text-muted"><tr><th class="px-4 py-3 font-medium">Profissional</th><th class="px-4 py-3 font-medium">Empresa / função</th><th class="px-4 py-3 font-medium">Movimentação</th><th class="px-4 py-3 font-medium">Ocorrida em</th><th class="px-4 py-3 font-medium">Registrada em</th><th class="px-4 py-3 font-medium">Responsável</th><th class="px-4 py-3 font-medium">Situação / correção</th><th class="px-4 py-3 text-right font-medium">Ação</th></tr></thead>
+        <tbody class="divide-y divide-line">
+          {% for movement in page_obj %}
+            <tr class="align-top">
+              <td class="px-4 py-4 font-medium">{{ movement.event_assignment.staff_member.full_name }}</td>
+              <td class="px-4 py-4 text-muted">{{ movement.event_assignment.company|default:'—' }}<span class="mt-1 block text-xs">{{ movement.event_assignment.staff_member.team_category.name }} · {{ movement.event_assignment.staff_member.staff_role.name }}</span></td>
+              <td class="px-4 py-4">{{ movement.get_movement_type_display }}</td>
+              <td class="px-4 py-4 text-muted">{{ movement.occurred_at|date:'d/m/Y H:i:s' }}</td>
+              <td class="px-4 py-4 text-muted">{{ movement.recorded_at|date:'d/m/Y H:i:s' }}</td>
+              <td class="px-4 py-4 text-muted">{{ movement.recorded_by_label }}</td>
+              <td class="px-4 py-4">
+                {% if movement.is_valid %}<span class="text-emerald-300">Válida</span>{% else %}<span class="text-amber-200">Invalidada</span><p class="mt-1 max-w-xs text-xs leading-5 text-muted">{{ movement.correction_reason }}</p><p class="mt-1 text-xs text-muted">Por {{ movement.corrected_by_label }} · {{ movement.corrected_at_label }}</p>{% endif %}
+              </td>
+              <td class="px-4 py-4 text-right">{% if movement.can_correct %}<a class="whitespace-nowrap text-sm text-muted underline decoration-line underline-offset-4 transition hover:text-red-300" title="Use somente se esta movimentação foi registrada por engano." href="{% url 'access_control:movement_correction' organization.slug event.pk movement.pk %}">Invalidar se incorreto</a>{% else %}<span class="text-xs text-muted">—</span>{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="px-5 py-10 text-center text-sm text-muted" colspan="8">Nenhuma movimentação corresponde aos filtros.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <div class="mt-4 flex items-center justify-between text-sm">
+    <span class="text-muted">{{ page_obj.paginator.count }} registro{{ page_obj.paginator.count|pluralize:'s' }} · página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    <nav class="flex gap-3" aria-label="Paginação">
+      {% if previous_url %}<a class="underline decoration-line underline-offset-4 hover:text-brand" href="{{ previous_url }}">Anterior</a>{% endif %}
+      {% if next_url %}<a class="underline decoration-line underline-offset-4 hover:text-brand" href="{{ next_url }}">Próxima</a>{% endif %}
+    </nav>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,15 @@
+{
+  "name": "crewpass",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/css/app.css -o ./static/css/app.css",
+    "watch:css": "tailwindcss -i ./src/css/app.css -o ./static/css/app.css --watch",
+    "build:js": "esbuild ./src/js/access-scanner.js --bundle --minify --splitting --format=esm --target=es2020 --outdir=./static/js --entry-names=access-scanner --chunk-names=chunks/[name]-[hash]"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.0",
+    "@zxing/browser": "^0.2.1",
+    "esbuild": "^0.28.2",
+    "tailwindcss": "^4.1.0"
+  }
+}

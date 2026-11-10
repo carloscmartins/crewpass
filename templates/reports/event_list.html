@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios · {{ organization.name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+  <a class="text-sm text-muted underline decoration-line underline-offset-4 hover:text-brand" href="{% url 'organizations:detail' organization.slug %}">← {{ organization.name }}</a>
+  <header class="mt-7">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Acompanhamento operacional</p>
+    <h1 class="mt-2 text-3xl font-medium tracking-tight">Relatórios por evento</h1>
+    <p class="mt-2 text-sm leading-6 text-muted">Consulte indicadores, presenças e o histórico imutável de movimentações.</p>
+  </header>
+
+  <ul class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    {% for event in events %}
+      <li class="border border-line bg-panel p-5 sm:p-6">
+        <span class="inline-flex border border-line px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-brand">{{ event.get_status_display }}</span>
+        <h2 class="mt-3 text-xl font-medium">{{ event.name }}</h2>
+        <p class="mt-1 text-sm text-muted">{{ event.location }} · {{ event.starts_at|date:'d/m/Y H:i' }}</p>
+        <a class="mt-5 inline-flex min-h-11 w-full items-center justify-center bg-brand px-5 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-auto" href="{% url 'reports:dashboard' organization.slug event.pk %}">Abrir painel</a>
+      </li>
+    {% empty %}
+      <li class="border border-line bg-panel px-5 py-10 text-sm text-muted sm:col-span-2 xl:col-span-3">Ainda não há eventos nesta organização.</li>
+    {% endfor %}
+  </ul>
+</main>
+{% endblock %}

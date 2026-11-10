@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Operação · {{ event.name }} · CrewPass{% endblock %}
+
+{% block extra_head %}
+<script type="module" src="{% static 'js/access-scanner.js' %}?v=2" defer></script>
+{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+  <div class="flex flex-col gap-3 border-b border-line pb-5 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <a class="text-sm text-muted underline decoration-line underline-offset-4 hover:text-brand" href="{% url 'access_control:event_list' organization.slug %}">← Eventos autorizados</a>
+      <p class="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-brand">Evento ativo</p>
+      <h1 class="mt-1 text-2xl font-medium tracking-tight sm:text-3xl">{{ event.name }}</h1>
+      <p class="mt-1 text-sm text-muted">{{ event.location }} · {{ event.starts_at|date:'d/m/Y H:i' }}</p>
+    </div>
+    <span class="inline-flex min-h-10 items-center border border-emerald-900 px-3 text-xs font-semibold uppercase tracking-wider text-emerald-300">Operação online</span>
+  </div>
+
+  {% if operation_error %}<p class="mt-5 border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200" role="alert">{{ operation_error }}</p>{% endif %}
+  {% if search_error %}<p class="mt-5 border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200" role="alert">{{ search_error }}</p>{% endif %}
+
+  <div class="mt-5 grid gap-5 lg:grid-cols-2">
+    <section class="border border-line bg-panel p-5 sm:p-6" aria-labelledby="scanner-title">
+      <p class="text-xs font-semibold uppercase tracking-wider text-brand">Leitura de credencial</p>
+      <h2 id="scanner-title" class="mt-2 text-xl font-medium">Escanear QR Code</h2>
+      <p class="mt-2 text-sm leading-6 text-muted">A câmera apenas identifica a credencial. Nenhuma movimentação é registrada sem confirmação.</p>
+      <div class="mt-4 overflow-hidden border border-line bg-black">
+        <video id="qr-video" class="hidden aspect-video w-full object-contain" autoplay muted playsinline aria-label="Imagem da câmera para leitura do QR Code"></video>
+        <div id="scanner-placeholder" class="grid aspect-video place-items-center px-6 text-center text-sm text-muted">A câmera será ativada somente quando você iniciar a leitura.</div>
+      </div>
+      <p id="scanner-status" class="mt-3 min-h-6 text-sm text-muted" role="status" aria-live="polite">Pronto para iniciar.</p>
+      <p class="mt-1 text-xs leading-5 text-muted">Mantenha o QR Code inteiro no enquadramento, bem iluminado e sem inclinar. Se estiver na tela de outro aparelho, aumente o brilho.</p>
+      <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+        <button id="start-scanner" class="min-h-12 flex-1 bg-brand px-5 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" type="button">Iniciar câmera</button>
+        <button id="stop-scanner" class="hidden min-h-12 border border-line px-5 text-sm font-medium text-primary transition hover:border-brand hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" type="button">Parar câmera</button>
+      </div>
+      <form id="scan-form" class="hidden" method="post" action="{% url 'access_control:operation' organization.slug event.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="intent" value="scan">
+        <input id="credential-code" type="hidden" name="credential_code" value="">
+      </form>
+      <noscript><p class="mt-3 text-sm text-muted">Ative o JavaScript para usar a câmera. Você também pode pesquisar manualmente.</p></noscript>
+    </section>
+
+    <section class="border border-line bg-panel p-5 sm:p-6" aria-labelledby="manual-search-title">
+      <p class="text-xs font-semibold uppercase tracking-wider text-brand">Alternativa à câmera</p>
+      <h2 id="manual-search-title" class="mt-2 text-xl font-medium">Pesquisar profissional</h2>
+      <p class="mt-2 text-sm leading-6 text-muted">A busca usa nome ou CPF completo dentro deste evento. O CPF não aparece nos resultados nem no endereço da página.</p>
+      <form class="mt-5" method="post" action="{% url 'access_control:operation' organization.slug event.pk %}" autocomplete="off">
+        {% csrf_token %}
+        <input type="hidden" name="intent" value="search">
+        <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="id_query">Nome ou CPF completo</label>
+        {{ search_form.query }}
+        <button class="mt-3 min-h-12 w-full border border-line px-5 text-sm font-semibold uppercase tracking-wider transition hover:border-brand hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-auto" type="submit">Pesquisar</button>
+      </form>
+
+      {% if result_rows %}
+        <div class="mt-5 border-t border-line pt-4" aria-live="polite">
+          <h3 class="font-medium">Resultados deste evento</h3>
+          {% if search_limited %}<p class="mt-1 text-xs text-muted">Exibindo até 30 resultados. Refine a busca para localizar a pessoa correta.</p>{% endif %}
+          <ul class="mt-3 divide-y divide-line">
+            {% for row in result_rows %}
+              <li class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="min-w-0">
+                  <p class="truncate font-medium">{{ row.assignment.staff_member.full_name }}</p>
+                  <p class="mt-1 text-xs text-muted">{{ row.assignment.company|default:'Sem empresa' }} · {{ row.assignment.staff_member.team_category.name }} · {{ row.assignment.staff_member.staff_role.name }}</p>
+                </div>
+                <form method="post" action="{% url 'access_control:operation' organization.slug event.pk %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="intent" value="select">
+                  <input type="hidden" name="assignment_id" value="{{ row.assignment.pk }}">
+                  <button class="min-h-10 w-full border border-line px-4 text-sm font-medium transition hover:border-brand hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-auto" type="submit">Selecionar</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% elif searched %}
+        <p class="mt-5 border-t border-line pt-4 text-sm text-muted" role="status">Nenhuma participação ativa com credencial ativa foi encontrada neste evento.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  {% if selected_credential %}
+    <section class="mt-5 border border-line bg-panel p-5 sm:p-7" aria-labelledby="confirmation-title">
+      <div class="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wider text-brand">Credencial identificada</p>
+          <h2 id="confirmation-title" class="mt-2 text-2xl font-medium">{{ selected_credential.event_assignment.staff_member.full_name }}</h2>
+          <p class="mt-1 text-sm text-muted">{{ selected_credential.event_assignment.company|default:'Sem empresa' }} · {{ selected_credential.event_assignment.staff_member.team_category.name }} · {{ selected_credential.event_assignment.staff_member.staff_role.name }}</p>
+        </div>
+        <span class="inline-flex min-h-9 items-center self-start border border-emerald-900 px-3 text-xs font-semibold uppercase tracking-wider text-emerald-300">Credencial ativa</span>
+      </div>
+
+      <div class="mt-5 grid gap-4 sm:grid-cols-2">
+        <div class="border border-line bg-surface p-4">
+          <p class="text-xs font-semibold uppercase tracking-wider text-muted">Última movimentação válida</p>
+          {% if last_movement %}
+            <p class="mt-2 font-medium">{{ last_movement.get_movement_type_display }} · {{ last_movement.recorded_at|date:'d/m/Y H:i:s' }}</p>
+          {% else %}
+            <p class="mt-2 font-medium">Nenhuma movimentação registrada</p>
+          {% endif %}
+        </div>
+        <div class="border border-brand/50 bg-brand/5 p-4">
+          <p class="text-xs font-semibold uppercase tracking-wider text-brand">Ação sugerida pelo servidor</p>
+          <p class="mt-2 text-2xl font-semibold text-brand">{{ expected_label }}</p>
+          <p class="mt-1 text-xs text-muted">A sequência é validada novamente no momento da confirmação.</p>
+        </div>
+      </div>
+
+      <form class="mt-5 border-t border-line pt-5" method="post" action="{% url 'access_control:operation' organization.slug event.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="intent" value="record">
+        {{ movement_form.credential_id }}
+        {{ movement_form.expected_type }}
+        {{ movement_form.last_movement_id }}
+        {{ movement_form.request_id }}
+        <label class="flex min-h-12 items-start gap-3 text-sm leading-6" for="{{ movement_form.confirm.id_for_label }}">{{ movement_form.confirm }}<span>Confirmo o registro da {{ expected_label|lower }} para {{ selected_credential.event_assignment.staff_member.full_name }} neste evento.</span></label>
+        {% for error in movement_form.confirm.errors %}<p class="mt-2 text-sm text-red-300" role="alert">{{ error }}</p>{% endfor %}
+        <button class="mt-4 min-h-12 w-full bg-brand px-5 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-auto" type="submit">Confirmar {{ expected_label|lower }}</button>
+      </form>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}

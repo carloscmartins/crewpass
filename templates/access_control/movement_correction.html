@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Corrigir movimentação · {{ event.name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+  <a class="text-sm text-muted underline decoration-line underline-offset-4 hover:text-brand" href="{{ history_url }}">← Histórico de movimentações</a>
+  <header class="mt-7">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Correção auditável</p>
+    <h1 class="mt-2 text-3xl font-medium tracking-tight">Invalidar movimentação</h1>
+    <p class="mt-2 text-sm leading-6 text-muted">{{ event.name }} · {{ organization.name }}</p>
+  </header>
+
+  <section class="mt-6 border border-line bg-panel p-5 sm:p-7" aria-labelledby="movement-title">
+    <h2 id="movement-title" class="text-lg font-medium">Registro original — preservado</h2>
+    <dl class="mt-4 grid gap-4 border-t border-line pt-4 sm:grid-cols-2">
+      <div><dt class="text-xs uppercase tracking-wider text-muted">Profissional</dt><dd class="mt-1 font-medium">{{ movement.event_assignment.staff_member.full_name }}</dd></div>
+      <div><dt class="text-xs uppercase tracking-wider text-muted">Movimentação</dt><dd class="mt-1 font-medium">{{ movement.get_movement_type_display }}</dd></div>
+      <div><dt class="text-xs uppercase tracking-wider text-muted">Ocorrida em</dt><dd class="mt-1 text-sm">{{ movement.occurred_at|date:'d/m/Y H:i:s' }}</dd></div>
+      <div><dt class="text-xs uppercase tracking-wider text-muted">Registrada por</dt><dd class="mt-1 text-sm">{{ movement.recorded_by_label }}</dd></div>
+    </dl>
+  </section>
+
+  {% if correction_error %}<p class="mt-5 border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200" role="alert">{{ correction_error }}</p>{% endif %}
+  {% if form.non_field_errors %}<p class="mt-5 border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200" role="alert">{{ form.non_field_errors }}</p>{% endif %}
+
+  {% if can_correct %}
+    <section class="mt-5 border border-red-900 bg-red-950/20 p-5 sm:p-7">
+      <p class="text-sm leading-6 text-muted">Somente a movimentação válida mais recente da participação pode ser invalidada. Se houver registros posteriores, corrija-os primeiro, da mais recente para a mais antiga. A situação será recalculada a partir do histórico restante.</p>
+      <form class="mt-5 border-t border-line pt-5" method="post">
+        {% csrf_token %}
+        {{ form.movement_id }}
+        <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+        {{ form.reason }}
+        {% for error in form.reason.errors %}<p class="mt-2 text-sm text-red-300" role="alert">{{ error }}</p>{% endfor %}
+        <label class="mt-5 flex min-h-11 items-start gap-3 text-sm leading-6" for="{{ form.confirm.id_for_label }}">{{ form.confirm }}<span>Confirmo a invalidação. O registro original não será apagado, e a ação ficará associada ao meu usuário.</span></label>
+        {% for error in form.confirm.errors %}<p class="mt-2 text-sm text-red-300" role="alert">{{ error }}</p>{% endfor %}
+        <button class="mt-5 min-h-12 w-full border border-red-800 bg-red-950/40 px-5 text-sm font-semibold uppercase tracking-wider text-red-200 transition hover:bg-red-900/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 sm:w-auto" type="submit">Confirmar invalidação</button>
+      </form>
+    </section>
+  {% elif movement.correction %}
+    <section class="mt-5 border border-line bg-panel p-5" aria-live="polite">
+      <h2 class="font-medium">Movimentação já invalidada</h2>
+      <p class="mt-2 text-sm text-muted">Por {{ movement.correction.corrected_by_label }} · {{ movement.correction.corrected_at|date:'d/m/Y H:i:s' }}</p>
+      <p class="mt-3 text-sm leading-6">{{ movement.correction.reason }}</p>
+    </section>
+  {% else %}
+    <p class="mt-5 border border-amber-900 bg-amber-950/30 px-4 py-3 text-sm text-amber-100" role="status">Esta não é a movimentação válida mais recente. Invalide primeiro as movimentações posteriores para preservar a sequência.</p>
+  {% endif %}
+</main>
+{% endblock %}

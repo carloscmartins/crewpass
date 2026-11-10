@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block title %}Turnos · {{ assignment.staff_member.full_name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+  <a class="text-sm text-muted underline decoration-line underline-offset-4 transition hover:text-brand" href="{{ assignment_list_url }}">← Participações</a>
+  <header class="mt-7">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Programação da equipe</p>
+    <h1 class="mt-2 text-3xl font-medium tracking-tight">Turnos do profissional</h1>
+    <p class="mt-2 text-sm text-muted">{{ assignment.staff_member.full_name }} · {{ assignment.event.name }}</p>
+    <p class="mt-3 max-w-3xl text-sm leading-6 text-muted">Cadastre o turno previsto do profissional. Se o término for antes do início, o turno atravessa a meia-noite. A programação não bloqueia entradas ou saídas reais.</p>
+  </header>
+
+  {% if not can_manage_shifts %}
+    <p class="mt-5 border border-amber-900 bg-amber-950/30 px-4 py-3 text-sm text-amber-100" role="status">Esta participação ou evento não está disponível para alteração de turnos.</p>
+  {% endif %}
+
+  {% if shifts %}
+    <section class="mt-6 border border-line bg-panel p-5 sm:p-6" aria-labelledby="shift-view-title">
+      <div>
+        <h2 id="shift-view-title" class="font-medium">Turno cadastrado</h2>
+        <p class="mt-1 text-xs text-muted">Visualização do turno previsto para esta participação.</p>
+      </div>
+      <div class="mt-4">
+        {% for shift in shifts %}
+          <p class="text-2xl font-medium text-brand">{{ shift.shift.name }} — {{ shift.shift.starts_at|time:'H:i' }}–{{ shift.shift.ends_at|time:'H:i' }}{% if shift.ends_next_day %}<span class="ml-2 text-sm text-brand">Até o dia seguinte</span>{% endif %}</p>
+        {% endfor %}
+      </div>
+      {% if can_manage_shifts %}
+        <div class="mt-4">
+          <a class="inline-flex min-h-11 items-center justify-center bg-brand px-5 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong" href="{% url 'staff:assignment_shift_edit' organization.slug assignment.pk shifts.0.pk %}">Editar turno</a>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if can_manage_shifts and not shifts %}
+    <section class="mt-6 border border-line bg-panel p-5 sm:p-7" aria-labelledby="shift-form-title">
+      <h2 id="shift-form-title" class="font-medium">Adicionar turno</h2>
+      {% if form.non_field_errors %}<p class="mt-4 border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200" role="alert">{{ form.non_field_errors }}</p>{% endif %}
+      <form class="mt-4 grid gap-4 sm:grid-cols-3" method="post">
+        {% csrf_token %}
+        {% for field in form %}
+          <div>
+            <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<p class="mt-2 text-sm text-red-300" role="alert">{{ error }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+        <div class="flex flex-wrap items-end gap-3 sm:col-span-3">
+          <button class="min-h-11 bg-brand px-5 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong" type="submit">Vincular turno</button>
+          <a class="inline-flex min-h-11 items-center justify-center border border-line px-4 text-sm text-muted hover:border-brand hover:text-brand" href="{% url 'staff:shift_list' organization.slug %}">Cadastrar novo turno</a>
+        </div>
+      </form>
+    </section>
+  {% endif %}
+
+  {% if can_manage_shifts and editing_shift %}
+    <section class="mt-6 border border-line bg-panel p-5 sm:p-7" aria-labelledby="shift-form-title">
+      <h2 id="shift-form-title" class="font-medium">Editar turno</h2>
+      {% if form.non_field_errors %}<p class="mt-4 border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200" role="alert">{{ form.non_field_errors }}</p>{% endif %}
+      <form class="mt-4 grid gap-4 sm:grid-cols-3" method="post">
+        {% csrf_token %}
+        {% for field in form %}
+          <div>
+            <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<p class="mt-2 text-sm text-red-300" role="alert">{{ error }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+        <div class="flex flex-wrap items-end gap-3 sm:col-span-3">
+          <button class="min-h-11 bg-brand px-5 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong" type="submit">Salvar alterações</button>
+          <a class="inline-flex min-h-11 items-center justify-center border border-line px-4 text-sm text-muted hover:border-brand hover:text-brand" href="{{ cancel_edit_url }}">Cancelar edição</a>
+        </div>
+      </form>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}

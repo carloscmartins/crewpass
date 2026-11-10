@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel · {{ event.name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
+  <div class="flex flex-col gap-4 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <a class="text-sm text-muted underline decoration-line underline-offset-4 hover:text-brand" href="{% url 'reports:event_list' organization.slug %}">← Eventos e relatórios</a>
+      <p class="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-brand">{{ event.get_status_display }} · {{ event.location }}</p>
+      <h1 class="mt-1 text-3xl font-medium tracking-tight">{{ event.name }}</h1>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <a class="inline-flex min-h-11 items-center justify-center border border-line px-4 text-sm font-medium transition hover:border-brand hover:text-brand" href="{% url 'reports:present_list' organization.slug event.pk %}">Ver presentes</a>
+      <a class="inline-flex min-h-11 items-center justify-center bg-brand px-4 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong" href="{% url 'reports:history' organization.slug event.pk %}">Histórico</a>
+    </div>
+  </div>
+
+  <section class="mt-6" aria-labelledby="metrics-title">
+    <h2 id="metrics-title" class="sr-only">Indicadores do evento</h2>
+    <dl class="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <div class="border border-line bg-panel p-4 sm:p-5"><dt class="text-xs uppercase tracking-wider text-muted">Participações credenciadas</dt><dd class="mt-3 text-3xl font-medium text-brand">{{ metrics.credentialed }}</dd><p class="mt-1 text-xs text-muted">Com ao menos uma credencial emitida</p></div>
+      <div class="border border-line bg-panel p-4 sm:p-5"><dt class="text-xs uppercase tracking-wider text-muted">Já registraram entrada</dt><dd class="mt-3 text-3xl font-medium">{{ metrics.entered }}</dd><p class="mt-1 text-xs text-muted">Participações com alguma entrada válida</p></div>
+      <div class="border border-line bg-panel p-4 sm:p-5"><dt class="text-xs uppercase tracking-wider text-muted">Presentes agora</dt><dd class="mt-3 text-3xl font-medium text-emerald-300">{{ metrics.present }}</dd><p class="mt-1 text-xs text-muted">Última movimentação válida: entrada</p></div>
+      <div class="border border-line bg-panel p-4 sm:p-5"><dt class="text-xs uppercase tracking-wider text-muted">Ainda não entraram</dt><dd class="mt-3 text-3xl font-medium">{{ metrics.not_entered }}</dd><p class="mt-1 text-xs text-muted">Sem movimentação válida</p></div>
+      <div class="border border-line bg-panel p-4 sm:p-5"><dt class="text-xs uppercase tracking-wider text-muted">Saíram e não voltaram</dt><dd class="mt-3 text-3xl font-medium">{{ metrics.exited }}</dd><p class="mt-1 text-xs text-muted">Última movimentação válida: saída</p></div>
+      <div class="border border-line bg-panel p-4 sm:p-5"><dt class="text-xs uppercase tracking-wider text-muted">Horas totais de permanência</dt><dd class="mt-3 text-2xl font-medium text-brand">{{ metrics.total_presence }}</dd><p class="mt-1 text-xs text-muted">Soma estimada da equipe; não é apuração de jornada</p></div>
+    </dl>
+  </section>
+
+  <section class="mt-7 overflow-hidden border border-line bg-panel" aria-labelledby="presence-periods-title">
+    <div class="border-b border-line px-5 py-4 sm:px-6">
+      <h2 id="presence-periods-title" class="font-medium">Permanências por profissional</h2>
+      <p class="mt-1 text-xs text-muted">Cada linha representa uma entrada válida e sua saída correspondente. Permanências em aberto aparecem como “Em andamento”.</p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[52rem] text-left text-sm">
+        <thead class="border-b border-line bg-black/30 text-xs uppercase tracking-wider text-muted"><tr><th class="px-4 py-3 font-medium">Profissional</th><th class="px-4 py-3 font-medium">Data de entrada</th><th class="px-4 py-3 font-medium">Hora de entrada</th><th class="px-4 py-3 font-medium">Data de saída</th><th class="px-4 py-3 font-medium">Hora de saída</th></tr></thead>
+        <tbody class="divide-y divide-line">
+          {% for period in presence_periods %}
+            <tr>
+              <td class="px-4 py-3 font-medium">{{ period.assignment.staff_member.full_name }}</td>
+              <td class="px-4 py-3 text-muted">{{ period.entry_at|date:'d/m/Y' }}</td>
+              <td class="px-4 py-3 text-muted">{{ period.entry_at|date:'H:i' }}</td>
+              {% if period.exit_at %}
+                <td class="px-4 py-3 text-muted">{{ period.exit_at|date:'d/m/Y' }}</td>
+                <td class="px-4 py-3 text-muted">{{ period.exit_at|date:'H:i' }}</td>
+              {% else %}
+                <td class="px-4 py-3 text-muted" colspan="2"><span class="text-emerald-300">Em andamento</span></td>
+              {% endif %}
+            </tr>
+          {% empty %}
+            <tr><td class="px-5 py-8 text-sm text-muted" colspan="5">Ainda não há permanências registradas neste evento.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="mt-7 overflow-hidden border border-line bg-panel" aria-labelledby="recent-title">
+    <div class="flex flex-col gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div><h2 id="recent-title" class="font-medium">Movimentações recentes</h2><p class="mt-1 text-xs text-muted">Registros invalidados continuam visíveis para preservar a auditoria.</p></div>
+      <a class="text-sm font-medium text-brand underline decoration-brand/30 underline-offset-4" href="{% url 'reports:history' organization.slug event.pk %}">Abrir histórico completo</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[50rem] text-left text-sm">
+        <thead class="border-b border-line bg-black/30 text-xs uppercase tracking-wider text-muted"><tr><th class="px-4 py-3 font-medium">Profissional</th><th class="px-4 py-3 font-medium">Movimentação</th><th class="px-4 py-3 font-medium">Registrada em</th><th class="px-4 py-3 font-medium">Responsável</th><th class="px-4 py-3 font-medium">Situação</th></tr></thead>
+        <tbody class="divide-y divide-line">
+          {% for movement in recent_movements %}
+            <tr>
+              <td class="px-4 py-3 font-medium">{{ movement.event_assignment.staff_member.full_name }}</td>
+              <td class="px-4 py-3">{{ movement.get_movement_type_display }}</td>
+              <td class="px-4 py-3 text-muted">{{ movement.recorded_at|date:'d/m/Y H:i:s' }}</td>
+              <td class="px-4 py-3 text-muted">{{ movement.recorded_by_label }}</td>
+              <td class="px-4 py-3">{% if movement.is_valid %}<span class="text-emerald-300">Válida</span>{% else %}<span class="text-amber-200">Invalidada</span>{% endif %}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="px-5 py-8 text-sm text-muted" colspan="5">Ainda não há movimentações neste evento.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+{% endblock %}

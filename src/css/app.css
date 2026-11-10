@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@source "../../templates/**/*.html";
+@source "../../accounts/**/*.py";
+@source "../../organizations/**/*.py";
+
+@theme {
+  --color-surface: #0a0a0a;
+  --color-panel: #141414;
+  --color-line: #292929;
+  --color-primary: #f0f0f0;
+  --color-muted: #969696;
+  --color-brand: #ffc000;
+  --color-brand-strong: #ffce3e;
+  --font-sans: Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+  }
+
+  .form-control {
+    width: 100%;
+    min-height: 3rem;
+    border: 1px solid #494949;
+    background: #0a0a0a;
+    padding: 0.75rem 1rem;
+    color: #f0f0f0;
+    outline: none;
+    transition: border-color 160ms ease;
+  }
+
+  .form-control::placeholder {
+    color: #7d7d7d;
+  }
+
+  .form-control:focus {
+    border-color: #ffc000;
+    outline: 2px solid rgb(255 192 0 / 18%);
+    outline-offset: 1px;
+  }
+}

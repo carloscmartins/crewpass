@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.name }} · {{ organization.name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+  <a class="text-sm text-muted underline decoration-line underline-offset-4 transition hover:text-brand" href="{% url 'events:list' organization.slug %}">← Eventos</a>
+  <section class="mt-7 border border-line bg-panel p-5 sm:p-8">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+      <div><span class="inline-flex border border-line px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider text-brand">{{ event.get_status_display }}</span><h1 class="mt-4 text-3xl font-medium tracking-tight sm:text-4xl">{{ event.name }}</h1><p class="mt-2 text-muted">{{ event.location }}</p></div>
+      {% if membership.role == 'ADMIN' or membership.role == 'SUPERVISOR' %}<a class="inline-flex min-h-10 items-center justify-center border border-line px-4 text-sm font-medium transition hover:border-brand hover:text-brand" href="{% url 'events:edit' organization.slug event.pk %}">Editar evento</a>{% endif %}
+    </div>
+    <dl class="mt-8 grid gap-5 border-t border-line pt-6 sm:grid-cols-2">
+      <div><dt class="text-xs uppercase tracking-wider text-muted">Início</dt><dd class="mt-2 font-medium">{{ event.starts_at|date:'l, d/m/Y · H:i' }}</dd></div>
+      <div><dt class="text-xs uppercase tracking-wider text-muted">Término</dt><dd class="mt-2 font-medium">{{ event.ends_at|date:'l, d/m/Y · H:i' }}</dd></div>
+      {% if event.description %}<div class="sm:col-span-2"><dt class="text-xs uppercase tracking-wider text-muted">Descrição</dt><dd class="mt-2 whitespace-pre-line text-sm leading-6 text-primary">{{ event.description }}</dd></div>{% endif %}
+    </dl>
+  </section>
+  <section class="mt-6 border border-line bg-panel p-5 sm:p-6" aria-labelledby="event-setup-title">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wider text-brand">Próximos passos</p>
+      <h2 id="event-setup-title" class="mt-2 text-xl font-medium">Prepare e opere este evento</h2>
+      <p class="mt-1 text-sm text-muted">Siga as etapas para montar a equipe, emitir credenciais e iniciar o controle de acesso.</p>
+    </div>
+
+    <ol class="mt-5 grid gap-3 lg:grid-cols-3">
+      <li class="flex flex-col border border-line bg-surface p-4 sm:p-5">
+        <p class="text-xs font-semibold uppercase tracking-wider text-brand">Etapa 1 · Equipe</p>
+        <h3 class="mt-2 font-medium">Associe os profissionais</h3>
+        <p class="mt-2 text-sm text-muted">{{ active_assignment_count }} {% if active_assignment_count == 1 %}participação ativa{% else %}participações ativas{% endif %} neste evento.</p>
+        <a class="mt-4 inline-flex min-h-10 items-center justify-center self-start border border-line px-4 text-sm font-medium transition hover:border-brand hover:text-brand" href="{% url 'staff:assignment_create' organization.slug %}?event={{ event.pk }}">Vincular profissional já cadastrado</a>
+      </li>
+
+      <li class="flex flex-col border border-line bg-surface p-4 sm:p-5">
+        <p class="text-xs font-semibold uppercase tracking-wider text-brand">Etapa 2 · Credenciais</p>
+        <h3 class="mt-2 font-medium">Emita os QR Codes</h3>
+        {% if active_assignment_count %}
+          <p class="mt-2 text-sm text-muted">{{ active_credential_count }} de {{ active_assignment_count }} participações com credencial ativa.</p>
+          {% if missing_credential_count %}<p class="mt-1 text-xs text-amber-200">Faltam {{ missing_credential_count }} credencial{{ missing_credential_count|pluralize:'s' }}.</p>{% endif %}
+        {% else %}
+          <p class="mt-2 text-sm text-muted">Associe profissionais antes de emitir credenciais.</p>
+        {% endif %}
+        <a class="mt-4 inline-flex min-h-10 items-center justify-center self-start border border-line px-4 text-sm font-medium transition hover:border-brand hover:text-brand" href="{% url 'credentials:list' organization.slug event.pk %}">Gerenciar credenciais</a>
+      </li>
+
+      <li class="flex flex-col border border-line bg-surface p-4 sm:p-5">
+        <p class="text-xs font-semibold uppercase tracking-wider text-brand">Etapa 3 · Operação</p>
+        <h3 class="mt-2 font-medium">Registre entradas e saídas</h3>
+        {% if event.status != 'ACTIVE' %}
+          <p class="mt-2 text-sm text-muted">A operação ficará disponível quando o evento estiver ativo.</p>
+        {% elif not active_credential_count %}
+          <p class="mt-2 text-sm text-muted">Emita pelo menos uma credencial ativa para iniciar a operação.</p>
+        {% else %}
+          <p class="mt-2 text-sm text-muted">Identifique cada profissional e confirme a movimentação sugerida.</p>
+          <a class="mt-4 inline-flex min-h-11 items-center justify-center bg-brand px-5 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong" href="{% url 'access_control:operation' organization.slug event.pk %}">Iniciar operação</a>
+        {% endif %}
+      </li>
+    </ol>
+
+    <div class="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-line pt-4">
+      <a class="text-sm text-muted underline decoration-line underline-offset-4 hover:text-brand" href="{% url 'reports:dashboard' organization.slug event.pk %}">Painel e relatórios</a>
+      <a class="text-sm text-muted underline decoration-line underline-offset-4 hover:text-brand" href="{% url 'access_control:operator_management' organization.slug event.pk %}">Gerenciar operadores</a>
+    </div>
+  </section>
+</main>
+{% endblock %}

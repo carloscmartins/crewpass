@@ -1,0 +1,24 @@
+<header class="border-b border-line bg-surface/95">
+  <div class="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <a class="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.2em] text-primary" href="{% url 'organizations:dashboard' %}">
+      <span class="grid size-8 place-items-center bg-brand text-sm font-bold text-black" aria-hidden="true">C</span>
+      CrewPass
+    </a>
+    {% if request.user.is_authenticated %}
+      <div class="flex items-center gap-3 sm:gap-5">
+        <span class="hidden text-sm text-muted sm:inline">{{ request.user.get_short_name }}</span>
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button class="text-sm font-medium text-muted transition hover:text-brand" type="submit">Sair</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+  {% if messages %}
+    <div class="mx-auto max-w-7xl px-4 pb-3 sm:px-6 lg:px-8" aria-live="polite">
+      {% for message in messages %}
+        <p class="border border-brand/30 bg-brand/10 px-4 py-3 text-sm text-brand" role="status">{{ message }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+</header>

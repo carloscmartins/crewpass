@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Operação de acesso · {{ organization.name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+  <a class="text-sm text-muted underline decoration-line underline-offset-4 hover:text-brand" href="{% url 'organizations:dashboard' %}">← Início</a>
+  <header class="mt-7">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Operação de acesso</p>
+    <h1 class="mt-2 text-3xl font-medium tracking-tight">{{ organization.name }}</h1>
+    <p class="mt-2 max-w-2xl text-sm leading-6 text-muted">Selecione um evento ativo autorizado. A leitura ou pesquisa identifica a credencial; somente a confirmação registra entrada ou saída.</p>
+  </header>
+
+  <section class="mt-7" aria-labelledby="active-events-title">
+    <h2 id="active-events-title" class="text-lg font-medium">Eventos disponíveis</h2>
+    <ul class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {% for event in events %}
+        <li class="border border-line bg-panel p-5 sm:p-6">
+          <p class="text-xs font-semibold uppercase tracking-wider text-brand">Evento ativo</p>
+          <h3 class="mt-3 text-xl font-medium">{{ event.name }}</h3>
+          <p class="mt-1 text-sm text-muted">{{ event.location }} · {{ event.starts_at|date:'d/m/Y H:i' }}</p>
+          <a class="mt-5 inline-flex min-h-11 w-full items-center justify-center bg-brand px-4 text-sm font-semibold text-black transition hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:w-auto" href="{% url 'access_control:operation' organization.slug event.pk %}">Abrir operação</a>
+        </li>
+      {% empty %}
+        <li class="border border-line bg-panel p-6 text-sm leading-6 text-muted md:col-span-2 xl:col-span-3">
+          {% if membership.role == 'OPERATOR' %}Você ainda não tem acesso operacional a nenhum evento ativo. Peça a um administrador ou supervisor para conceder acesso ao evento.{% else %}Não há eventos ativos disponíveis para operação.{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+</main>
+{% endblock %}

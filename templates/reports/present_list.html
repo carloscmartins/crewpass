@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Presentes · {{ event.name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:px-8 lg:py-10">
+  <a class="text-sm text-muted underline decoration-line underline-offset-4 hover:text-brand" href="{% url 'reports:dashboard' organization.slug event.pk %}">← Painel do evento</a>
+  <header class="mt-5">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">{{ event.name }}</p>
+    <h1 class="mt-2 text-3xl font-medium tracking-tight">Profissionais presentes</h1>
+    <p class="mt-2 text-sm text-muted">Participações cuja última movimentação válida é uma entrada.</p>
+  </header>
+
+  {% if filter_error %}<p class="mt-5 border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200" role="alert">{{ filter_error }}</p>{% endif %}
+  <form class="mt-6 grid gap-3 border border-line bg-panel p-4 sm:grid-cols-2 xl:grid-cols-5 xl:items-end" method="get">
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.q.id_for_label }}">{{ form.q.label }}</label>{{ form.q }}</div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.company.id_for_label }}">{{ form.company.label }}</label>{{ form.company }}</div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>{{ form.category }}</div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="{{ form.role.id_for_label }}">{{ form.role.label }}</label>{{ form.role }}</div>
+    <button class="min-h-12 border border-line px-4 text-sm font-semibold uppercase tracking-wider transition hover:border-brand hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" type="submit">Filtrar</button>
+  </form>
+
+  <section class="mt-5 overflow-hidden border border-line bg-panel" aria-label="Lista de presentes">
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[48rem] text-left text-sm">
+        <thead class="border-b border-line bg-black/30 text-xs uppercase tracking-wider text-muted"><tr><th class="px-4 py-4 font-medium">Profissional</th><th class="px-4 py-4 font-medium">Empresa</th><th class="px-4 py-4 font-medium">Categoria / função</th><th class="px-4 py-4 font-medium">Última entrada válida</th></tr></thead>
+        <tbody class="divide-y divide-line">
+          {% for assignment in page_obj %}
+            <tr>
+              <td class="px-4 py-4 font-medium">{{ assignment.staff_member.full_name }}</td>
+              <td class="px-4 py-4 text-muted">{{ assignment.company|default:'—' }}</td>
+              <td class="px-4 py-4">{{ assignment.staff_member.team_category.name }}<span class="mt-1 block text-xs text-muted">{{ assignment.staff_member.staff_role.name }}</span></td>
+              <td class="px-4 py-4 text-muted">{{ assignment.latest_movement_at|date:'d/m/Y H:i:s' }}</td>
+            </tr>
+          {% empty %}
+            <tr><td class="px-5 py-10 text-center text-sm text-muted" colspan="4">Nenhuma participação corresponde aos filtros.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <div class="mt-4 flex items-center justify-between text-sm">
+    <span class="text-muted">{{ page_obj.paginator.count }} {% if page_obj.paginator.count == 1 %}participação{% else %}participações{% endif %}</span>
+    <nav class="flex gap-3" aria-label="Paginação">
+      {% if previous_url %}<a class="underline decoration-line underline-offset-4 hover:text-brand" href="{{ previous_url }}">Anterior</a>{% endif %}
+      {% if next_url %}<a class="underline decoration-line underline-offset-4 hover:text-brand" href="{{ next_url }}">Próxima</a>{% endif %}
+    </nav>
+  </div>
+</main>
+{% endblock %}

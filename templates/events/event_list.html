@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Eventos · {{ organization.name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+  <a class="text-sm text-muted underline decoration-line underline-offset-4 transition hover:text-brand" href="{% url 'organizations:detail' organization.slug %}">{{ organization.name }}</a>
+  <div class="mt-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+    <div><p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Agenda operacional</p><h1 class="mt-2 text-3xl font-medium tracking-tight">Eventos</h1><p class="mt-2 text-sm text-muted">Prepare e acompanhe os eventos da organização.</p></div>
+    {% if membership.role == 'ADMIN' or membership.role == 'SUPERVISOR' %}<a class="inline-flex min-h-11 items-center justify-center bg-brand px-5 py-2 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong" href="{% url 'events:create' organization.slug %}">Novo evento</a>{% endif %}
+  </div>
+  <form class="mt-7 grid gap-3 border border-line bg-panel p-4 sm:grid-cols-[1fr_14rem_auto] sm:items-end" method="get">
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="event-search">Pesquisar</label><input class="form-control" id="event-search" name="q" value="{{ query }}" placeholder="Nome ou local" type="search"></div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="event-status">Status</label><select class="form-control" id="event-status" name="status"><option value="">Todos</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+    <button class="min-h-12 border border-line px-5 text-sm font-medium transition hover:border-brand hover:text-brand" type="submit">Filtrar</button>
+  </form>
+  <ul class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    {% for event in events %}
+      <li><a class="group block h-full border border-line bg-panel p-5 transition hover:border-brand/70" href="{% url 'events:detail' organization.slug event.pk %}">
+        <span class="inline-flex border border-line px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider {% if event.status == 'ACTIVE' %}border-emerald-900 text-emerald-300{% elif event.status == 'CANCELLED' %}border-red-900 text-red-300{% else %}text-muted{% endif %}">{{ event.get_status_display }}</span>
+        <h2 class="mt-4 text-xl font-medium group-hover:text-brand">{{ event.name }}</h2>
+        <p class="mt-2 truncate text-sm text-muted">{{ event.location }}</p>
+        <p class="mt-5 border-t border-line pt-4 text-xs text-muted">{{ event.starts_at|date:'d/m/Y H:i' }} – {{ event.ends_at|date:'d/m/Y H:i' }}</p>
+      </a></li>
+    {% empty %}
+      <li class="border border-line bg-panel p-8 text-center md:col-span-2 xl:col-span-3"><h2 class="font-medium">Nenhum evento encontrado</h2><p class="mt-2 text-sm text-muted">Crie o primeiro evento ou ajuste os filtros.</p></li>
+    {% endfor %}
+  </ul>
+  <p class="mt-4 text-xs text-muted">{{ events|length }} resultado{{ events|length|pluralize:'s' }}</p>
+</main>
+{% endblock %}

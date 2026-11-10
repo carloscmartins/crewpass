@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ organization.name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+  <a class="text-sm text-muted underline decoration-line underline-offset-4 transition hover:text-brand" href="{% url 'organizations:dashboard' %}">← Todas as organizações</a>
+  <div class="mt-8 border-b border-line pb-8">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">{{ membership.get_role_display }}</p>
+    <h1 class="mt-3 text-3xl font-medium tracking-tight sm:text-4xl">{{ organization.name }}</h1>
+    {% if organization.legal_name %}<p class="mt-2 text-sm text-muted">{{ organization.legal_name }}</p>{% endif %}
+  </div>
+  {% if membership.role == 'ADMIN' or membership.role == 'SUPERVISOR' %}
+  <section class="mt-8" aria-labelledby="workspace-title">
+    <h2 id="workspace-title" class="text-lg font-medium">Cadastros da organização</h2>
+    <ul class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <li><a class="group block h-full border border-line bg-panel p-6 transition hover:border-brand/70" href="{% url 'events:list' organization.slug %}"><span class="text-xs uppercase tracking-wider text-muted">Agenda</span><span class="mt-3 block text-xl font-medium">Eventos</span><span class="mt-5 block text-sm text-brand">Ver eventos →</span></a></li>
+      <li><a class="group block h-full border border-line bg-panel p-6 transition hover:border-brand/70" href="{% url 'staff:company_list' organization.slug %}"><span class="text-xs uppercase tracking-wider text-muted">Prestadores</span><span class="mt-3 block text-xl font-medium">Empresas</span><span class="mt-5 block text-sm text-brand">Ver empresas →</span></a></li>
+      <li><a class="group block h-full border border-line bg-panel p-6 transition hover:border-brand/70" href="{% url 'staff:person_list' organization.slug %}"><span class="text-xs uppercase tracking-wider text-muted">Equipe</span><span class="mt-3 block text-xl font-medium">Profissionais</span><span class="mt-5 block text-sm text-brand">Ver profissionais →</span></a></li>
+       <li><a class="group block h-full border border-line bg-panel p-6 transition hover:border-brand/70" href="{% url 'staff:category_list' organization.slug %}"><span class="text-xs uppercase tracking-wider text-muted">Classificação</span><span class="mt-3 block text-xl font-medium">Categorias e funções</span><span class="mt-5 block text-sm text-brand">Gerenciar grupos e funções →</span></a></li>
+      <li><a class="group block h-full border border-line bg-panel p-6 transition hover:border-brand/70" href="{% url 'staff:assignment_list' organization.slug %}"><span class="text-xs uppercase tracking-wider text-muted">Credenciamento</span><span class="mt-3 block text-xl font-medium">Participações</span><span class="mt-5 block text-sm text-brand">Associar equipes →</span></a></li>
+      <li><a class="group block h-full border border-line bg-panel p-6 transition hover:border-brand/70" href="{% url 'staff:shift_list' organization.slug %}"><span class="text-xs uppercase tracking-wider text-muted">Programação</span><span class="mt-3 block text-xl font-medium">Turnos</span><span class="mt-5 block text-sm text-brand">Cadastrar turnos →</span></a></li>
+    </ul>
+  </section>
+  {% elif membership.role == 'OPERATOR' %}
+  <section class="mt-8 max-w-2xl border border-line bg-panel p-6 sm:p-8" aria-labelledby="operator-title">
+    <h2 id="operator-title" class="text-lg font-medium">Acesso operacional</h2>
+    <p class="mt-2 text-sm leading-6 text-muted">Você só verá eventos ativos aos quais foi autorizado por um administrador ou supervisor.</p>
+    <a class="mt-5 inline-flex min-h-11 items-center justify-center bg-brand px-5 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong" href="{% url 'access_control:event_list' organization.slug %}">Ver meus eventos</a>
+  </section>
+  {% else %}
+  <section class="mt-8 max-w-2xl border border-line bg-panel p-6 sm:p-8" aria-labelledby="operator-title">
+    <h2 id="operator-title" class="text-lg font-medium">Acesso operacional</h2>
+    <p class="mt-2 text-sm leading-6 text-muted">Seu perfil não pode gerenciar cadastros. O acesso operacional por evento será disponibilizado quando as permissões de operador forem configuradas.</p>
+  </section>
+  {% endif %}
+</main>
+{% endblock %}

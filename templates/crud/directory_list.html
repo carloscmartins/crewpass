@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} · {{ organization.name }} · CrewPass{% endblock %}
+
+{% block body %}
+{% include 'components/header.html' %}
+<main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+  <a class="text-sm text-muted underline decoration-line underline-offset-4 transition hover:text-brand" href="{% url 'organizations:detail' organization.slug %}">{{ organization.name }}</a>
+  <div class="mt-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+    <div><p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Cadastros</p><h1 class="mt-2 text-3xl font-medium tracking-tight">{{ page_title }}</h1><p class="mt-2 text-sm text-muted">{{ page_description }}</p></div>
+    {% if can_manage %}
+      <div class="flex flex-col gap-3 sm:items-end">
+        {% if function_parent_categories %}
+          <form class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row" action="{{ manage_functions_url }}" method="get">
+            <label class="sr-only" for="existing-category">Categoria para adicionar função</label>
+            <select class="form-control min-w-56" id="existing-category" name="category_id" required>
+              <option value="">Selecione uma categoria existente</option>
+              {% for category in function_parent_categories %}<option value="{{ category.pk }}">{{ category.name }}</option>{% endfor %}
+            </select>
+            <button class="min-h-11 border border-line px-4 text-sm font-medium transition hover:border-brand hover:text-brand" type="submit">Adicionar função</button>
+          </form>
+        {% endif %}
+        <a class="inline-flex min-h-11 items-center justify-center bg-brand px-5 py-2 text-sm font-semibold uppercase tracking-wider text-black transition hover:bg-brand-strong" href="{{ create_url }}">{% if is_category_directory %}Nova categoria{% else %}Novo cadastro{% endif %}</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <form class="mt-7 grid gap-3 border border-line bg-panel p-4 sm:grid-cols-[1fr_12rem_auto] sm:items-end" method="get">
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="search">Pesquisar</label><input id="search" class="form-control" name="q" value="{{ query }}" placeholder="Nome ou contato" type="search"></div>
+    <div><label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted" for="active">Status</label><select class="form-control" id="active" name="active"><option value="">Todos</option><option value="1" {% if active_filter == '1' %}selected{% endif %}>Ativos</option><option value="0" {% if active_filter == '0' %}selected{% endif %}>Inativos</option></select></div>
+    <button class="min-h-12 border border-line px-5 text-sm font-medium transition hover:border-brand hover:text-brand" type="submit">Filtrar</button>
+  </form>
+
+  <div class="mt-5 overflow-hidden border border-line bg-panel">
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[34rem] text-left text-sm">
+        <thead class="border-b border-line bg-black/30 text-xs uppercase tracking-wider text-muted"><tr><th class="px-5 py-4 font-medium">Cadastro</th><th class="px-5 py-4 font-medium">Status</th><th class="px-5 py-4 text-right font-medium">Ação</th></tr></thead>
+        <tbody class="divide-y divide-line">
+          {% for row in rows %}
+            <tr class="transition hover:bg-white/[0.02]"><td class="px-5 py-4"><span class="block font-medium text-primary">{{ row.name }}</span>{% if row.subtitle %}<span class="mt-1 block text-xs text-muted">{{ row.subtitle }}</span>{% endif %}</td><td class="px-5 py-4"><span class="inline-flex items-center gap-2 text-xs {% if row.active %}text-emerald-300{% else %}text-muted{% endif %}"><span class="size-1.5 rounded-full {% if row.active %}bg-emerald-400{% else %}bg-muted{% endif %}"></span>{{ row.status }}</span></td><td class="px-5 py-4 text-right">{% if can_manage %}<a class="font-medium text-brand underline decoration-brand/30 underline-offset-4 hover:decoration-brand" href="{{ row.edit_url }}">{{ row.edit_label|default:'Editar' }}</a>{% else %}<span class="text-muted">—</span>{% endif %}</td></tr>
+          {% empty %}
+            <tr><td class="px-5 py-12 text-center" colspan="3"><p class="font-medium">Nenhum cadastro encontrado</p><p class="mt-2 text-sm text-muted">Ajuste os filtros ou adicione um novo cadastro.</p></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="border-t border-line px-5 py-3 text-xs text-muted">{{ rows|length }} resultado{{ rows|length|pluralize:'s' }}</p>
+  </div>
+</main>
+{% endblock %}
