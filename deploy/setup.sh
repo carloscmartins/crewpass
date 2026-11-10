@@ -2,7 +2,7 @@
 # CrewPass — bootstrap de deploy na VPS (passo único).
 set -euo pipefail
 
-DOMAIN_DEFAULT="crewpass.seudominio.com.br"
+DOMAIN_DEFAULT="crewpass.nordicusbot.com.br"
 
 bold() { printf '\n\033[1;36m== %s\033[0m\n' "$*"; }
 warn() { printf '\033[1;33m! %s\033[0m\n' "$*"; }
